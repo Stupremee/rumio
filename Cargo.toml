@@ -1,0 +1,8 @@
+[package]
+name = "rumio"
+description = "Control your MMIO and CPU registers without pain."
+version = "0.1.0"
+authors = ["Justus K <justus.k@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
