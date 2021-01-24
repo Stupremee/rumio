@@ -1,13 +1,29 @@
 //! Traits for accessing CPU registers.
 
-/// Trait for read and write functionality of a CPU register.
-pub trait RegisterReadWrite {
-    /// The value that represents the register.
-    type Value: crate::Int;
-
+/// Trait for reading from a CPU register.
+pub trait RegisterRead<I: crate::Int> {
     /// Read the raw value from this CPU register.
-    fn read() -> Self::Value;
+    fn read() -> I;
+}
 
+/// Trait for writing into a CPU register.
+pub trait RegisterWrite<I: crate::Int> {
     /// Write the given value into this CPU register.
-    fn write(val: Self::Value);
+    fn write(val: I);
+
+    /// Set all bits that high in the mask, to `1`
+    /// inside this CPU register.
+    ///
+    /// This can be implemented by reading the value first,
+    /// settings the bits and then update the value, if
+    /// your architecture doesn't have a bit set instruction.
+    fn set(mask: I);
+
+    /// Set all bits that high in the mask, to `0`
+    /// inside this CPU register.
+    ///
+    /// This can be implemented by reading the value first,
+    /// clearing the bits and then update the value, if
+    /// your architecture doesn't have a bit clear instruction.
+    fn clear(mask: I);
 }
