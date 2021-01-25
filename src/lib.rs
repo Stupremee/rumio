@@ -7,6 +7,7 @@
 )]
 
 pub mod cpu;
+pub mod voladdr;
 
 mod macros;
 

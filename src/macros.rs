@@ -1,3 +1,145 @@
+/// Define abstractions for a CPU register.
+///
+/// The first line must contain the register struct, that either
+/// implements [`RegisterRead`][rr] or [`RegisterWrite`][rw] or both,
+/// and the underlying type for this register.
+/// After the first line, a comma-separated list of field declaration follows.
+///
+/// This macro generates a new module, with the given name, for each field.
+/// To access a fields data, call `FIELD_NAME::get()` where `FIELD_NAME`
+/// comes from the declaration inside the macro. To modify the data,
+/// call `FIELD_NAME::set()`.
+///
+/// he arguments and return values of these methods are determined by the type of this field.
+/// Each field can be one of the following types:
+///
+/// ## Single Bit
+///
+/// A single bit at a specific position.
+/// ```ignore
+/// rw IS_ENABLED: 0,
+/// ```
+///
+/// The `rw` represents the permission, and can be either `r`, `w` or `rw`.
+/// For example, If the permission is `r`, the bit can only be read, but never
+/// written to. After the permission comes the name of the field.
+///
+/// The `0` specifies the bit inside the register for this field.
+///
+/// The generated `get()` method returns a bool, indicating `1` or `0`.
+/// The set method takes a `bool`.
+///
+/// ## Enum
+///
+/// Multiple bits, that together represent a variant of an enum.
+/// ```ignore
+/// rw MODE: 1..3 = enum Mode [
+///     User = 0b00,
+///     Supervisor = 0b01,
+///     Machine = 0b01,
+/// ],
+/// ```
+///
+/// The generated `get` method returns an `Option<Mode>`, which is `None`
+/// if the bit pattern is not a valid variant, otherwise it returns
+/// the variant with the bit pattern.
+///
+/// The generated `set` method takes the `Mode` enum and writes the bit pattern
+/// of the given variant into the bit range.
+///
+/// **Note** that the ranges are **inclusive** and **must** be valid.
+/// There are no checks at all and providing an invalid range
+/// may lead to undefined behaviour. This is also true for the
+/// next type, the bitflags.
+///
+/// ## Bitflags
+///
+/// Multiple bits, each representing a flag.
+/// ```ignore
+/// rw FLAGS: 4..7 = flags Flags [
+///     A = 0b0001,
+///     B = 0b0010,
+///     C = 0b0100,
+/// ],
+/// ```
+///
+/// The generated `Flags` struct is generated using the [`bitflags`][bf] crate and thus
+/// has the exact same API.
+///
+/// The generated `get` method creates the struct using the `from_bits_truncate` method.
+///
+///
+/// # Example
+///
+/// ```no_run
+/// # use rumio::cpu::{RegisterRead, RegisterWrite};
+/// pub struct CpuRegister;
+///
+/// impl RegisterRead<u64> for CpuRegister {
+///     fn read() -> u64 {
+///         // ...
+///         # unimplemented!()
+///     }
+/// }
+///
+/// impl RegisterWrite<u64> for CpuRegister {
+///     fn write(val: u64) {
+///         // ...
+///     }
+///
+///     fn set(mask: u64) {
+///         rumio::impl_cpu_set!(Self, mask);
+///     }
+///
+///     fn clear(mask: u64) {
+///         rumio::impl_cpu_clear!(Self, mask);
+///     }
+/// }
+///
+/// rumio::define_cpu_register! { CpuRegister as u64 =>
+///     r ENABLED: 0,
+///     rw MODE: 1..2 = enum Mode [
+///         Sending = 0b00,
+///         Receiving = 0b01,
+///     ],
+///
+///     rw FLAGS: 3..6 = flags Flags [
+///         A = 0b0001,
+///         B = 0b0010,
+///         C = 0b0100,
+///         D = 0b1000,
+///     ],
+/// }
+///
+/// # fn send_data() {}
+///
+/// fn main() {
+///     if !ENABLED::get() {
+///         panic!("CPU not enabled");
+///     }
+///
+///     match MODE::get().unwrap() {
+///         Mode::Sending => {
+///             println!("sending data...");
+///             send_data();
+///             MODE::set(Mode::Receiving);
+///             println!("ready to receive data...");
+///         }
+///         Mode::Receiving => println!("receiving data..."),
+///     }
+///
+///     let flags = FLAGS::get();
+///     if !flags.contains(Flags::A) {
+///         println!("A flag is not enabled. Enable it now...");
+///         FLAGS::set(flags | Flags::A);
+///     }
+/// }
+/// ```
+///
+///
+/// [rr]: crate::cpu::RegisterRead
+/// [rw]: crate::cpu::RegisterWrite
+/// [bf]: https://docs.rs/bitflags
 #[macro_export]
 macro_rules! define_cpu_register {
     ($register:ident as $num_ty:ty => $(

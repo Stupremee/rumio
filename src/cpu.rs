@@ -1,12 +1,17 @@
 //! Traits for accessing CPU registers.
 
 /// Trait for reading from a CPU register.
+///
 pub trait RegisterRead<I: crate::Int> {
     /// Read the raw value from this CPU register.
+    ///
+    /// It's recommended to implement this method as `#[inline]`
     fn read() -> I;
 }
 
 /// Trait for writing into a CPU register.
+///
+/// It's recommended to implement all of these methods as `#[inline]`.
 pub trait RegisterWrite<I: crate::Int> {
     /// Write the given value into this CPU register.
     fn write(val: I);
