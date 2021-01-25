@@ -1,16 +1,14 @@
 #![no_std]
-#![forbid(unsafe_code)]
 #![deny(
     // missing_docs,
-    rust_2018_idioms, clippy::pedantic,
-    broken_intra_doc_links, private_intra_doc_links,
+    rust_2018_idioms, broken_intra_doc_links, private_intra_doc_links,
 )]
 
 #[cfg(feature = "example_generated")]
 pub mod example_generated;
 
 pub mod cpu;
-pub mod voladdr;
+pub mod mmio;
 
 use core::ops::{BitAnd, BitOr, Not, Shl, Shr};
 
