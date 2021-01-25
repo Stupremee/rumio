@@ -11,6 +11,10 @@ fn reset_register() {
     REGISTER.with(|reg| reg.store(DEFAULT_REG_VALUE, Ordering::SeqCst))
 }
 
+fn assert_reg_eq(val: u64) {
+    REGISTER.with(|reg| assert_eq!(val, reg.load(Ordering::SeqCst)))
+}
+
 struct CpuRegister;
 
 impl RegisterRead<u64> for CpuRegister {
@@ -45,11 +49,19 @@ rumio::define_cpu_register! { CpuRegister as u64 =>
 
     rw BAR: 3,
     rw BAZ: 4,
+
+    rw FLAGS: 5..8 = flags Flags [
+        A = 0b0001,
+        B = 0b0010,
+        C = 0b0100,
+        D = 0b1000,
+    ],
 }
 
 #[test]
 fn read_write_single_bit() {
     reset_register();
+    assert_reg_eq(DEFAULT_REG_VALUE);
 
     assert!(FOO::get());
 
@@ -57,19 +69,39 @@ fn read_write_single_bit() {
     assert!(!BAZ::get());
 
     BAR::set(true);
+    assert_reg_eq(0b1101);
     assert!(BAR::get());
     assert!(!BAZ::get());
 
     BAZ::set(true);
+    assert_reg_eq(0b11101);
     assert!(BAZ::get());
 }
 
 #[test]
 fn read_write_enum() {
     reset_register();
+    assert_reg_eq(DEFAULT_REG_VALUE);
 
     assert_eq!(MODE::get(), Some(Mode::B));
 
     MODE::set(Mode::C);
+    assert_reg_eq(0b110);
     assert_eq!(MODE::get(), Some(Mode::C));
+}
+
+#[test]
+fn read_write_flags() {
+    reset_register();
+    assert_reg_eq(DEFAULT_REG_VALUE);
+
+    assert_eq!(FLAGS::get(), Flags::empty());
+
+    FLAGS::set(Flags::A | Flags::C);
+    assert_reg_eq(0b10100101);
+    assert_eq!(FLAGS::get(), Flags::A | Flags::C);
+
+    FLAGS::set(Flags::B | Flags::C);
+    assert_reg_eq(0b11000101);
+    assert_eq!(FLAGS::get(), Flags::B | Flags::C);
 }

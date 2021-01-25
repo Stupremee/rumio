@@ -18,14 +18,15 @@ macro_rules! define_cpu_register {
         };
 
         $($(
-            $(#[$kind_attr])*
-            #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-            pub enum $kind_name {
-                $(
-                    $(#[$kind_variant_attr])*
-                    $kind_variant
-                ),*
-            }
+            $crate::define_cpu_register!(@internal_gen_kind, $num_ty,
+                $(#[$kind_attr])*
+                $kind_type $kind_name [
+                    $(
+                        $(#[$kind_variant_attr])*
+                        $kind_variant = $kind_variant_val
+                    ),*
+                ]
+            );
         )*)?
 
         $(
@@ -39,6 +40,45 @@ macro_rules! define_cpu_register {
                 )?);
             }
         )*
+    };
+
+    // =====================================
+    // Read and write bitflags
+    // =====================================
+
+    (@internal, $num_ty:ty, $register:ident, rw $name:ident: $from:literal .. $to:literal = flags $kind_name:ident [
+        $($kind_variant:ident = $kind_variant_val:expr),*
+    ]) => {
+        $crate::define_cpu_register!(@internal, $num_ty, $register, r $name: $from .. $to = flags $kind_name [
+            $($kind_variant = $kind_variant_val),*
+        ]);
+
+        $crate::define_cpu_register!(@internal, $num_ty, $register, w $name: $from .. $to = flags $kind_name [
+            $($kind_variant = $kind_variant_val),*
+        ]);
+    };
+
+    (@internal, $num_ty:ty, $register:ident, r $name:ident: $from:literal .. $to:literal = flags $kind_name:ident [
+        $($kind_variant:ident = $kind_variant_val:expr),*
+    ]) => {
+        /// Read the raw bits from the register and return a struct representing
+        /// all flags of this bit range.
+        pub fn get() -> super::$kind_name {
+            let val = <super::$register as $crate::cpu::RegisterRead<$num_ty>>::read();
+            super::$kind_name::from_bits_truncate($crate::get_bits(val, ($from, $to)))
+        }
+    };
+
+    (@internal, $num_ty:ty, $register:ident, w $name:ident: $from:literal .. $to:literal = flags $kind_name:ident [
+        $($kind_variant:ident = $kind_variant_val:expr),*
+    ]) => {
+        /// Set this bit range to the given bitflags.
+        pub fn set(flags: super::$kind_name) {
+            let bits = super::$kind_name::bits(&flags);
+            let val = <super::$register as $crate::cpu::RegisterRead<$num_ty>>::read();
+            let val = $crate::set_bits(val, ($from, $to), bits);
+            <super::$register as $crate::cpu::RegisterWrite<$num_ty>>::write(val);
+        }
     };
 
     // =====================================
@@ -62,7 +102,6 @@ macro_rules! define_cpu_register {
     ]) => {
         /// Read the raw bits from the register, and then try to map them to an enum.
         pub fn get() -> ::core::option::Option<super::$kind_name> {
-            const BIT_LEN: ::core::primitive::usize = ::core::mem::size_of::<$num_ty>() * 8;
             let val = <super::$register as $crate::cpu::RegisterRead<$num_ty>>::read();
             match $crate::get_bits(val, ($from, $to)) {
                 $($kind_variant_val => ::core::option::Option::Some(super::$kind_name::$kind_variant),)*
@@ -76,7 +115,6 @@ macro_rules! define_cpu_register {
     ]) => {
         /// Set this bits to the given value.
         pub fn set(val: super::$kind_name) {
-            const BIT_LEN: ::core::primitive::usize = ::core::mem::size_of::<$num_ty>() * 8;
             let bits = match val {
                 $(super::$kind_name::$kind_variant => $kind_variant_val,)*
             };
@@ -110,6 +148,39 @@ macro_rules! define_cpu_register {
             match x {
                 true => <super::$register as $crate::cpu::RegisterWrite<$num_ty>>::set(MASK),
                 false => <super::$register as $crate::cpu::RegisterWrite<$num_ty>>::clear(MASK),
+            }
+        }
+    };
+
+    // =====================================
+    // Generate the kind enums and bitflags
+    // =====================================
+
+    (@internal_gen_kind, $num_ty:ty,
+        $(#[$attr:meta])*
+        enum $kind_name:ident [$(
+            $(#[$variant_attr:meta])*
+            $variant:ident = $variant_val:expr
+        ),*]
+    ) => {
+        $(#[$attr])*
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        pub enum $kind_name {
+            $( $(#[$variant_attr])* $variant ),*
+        }
+    };
+
+    (@internal_gen_kind, $num_ty:ty,
+        $(#[$attr:meta])*
+        flags $kind_name:ident [$(
+            $(#[$variant_attr:meta])*
+            $variant:ident = $variant_val:expr
+        ),*]
+    ) => {
+        ::bitflags::bitflags! {
+            $(#[$attr])*
+            pub struct $kind_name: $num_ty {
+                $(const $variant = $variant_val;)*
             }
         }
     };
