@@ -6,6 +6,9 @@
     broken_intra_doc_links, private_intra_doc_links,
 )]
 
+#[cfg(feature = "example_generated")]
+pub mod example_generated;
+
 pub mod cpu;
 pub mod voladdr;
 

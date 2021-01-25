@@ -7,3 +7,9 @@ edition = "2018"
 
 [dependencies]
 bitflags = "1"
+
+[features]
+example_generated = []
+
+[package.metadata.docs.rs]
+features = ["example_generated"]
