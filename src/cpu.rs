@@ -66,7 +66,9 @@ pub trait RegisterWrite<I: crate::Int> {
 #[macro_export]
 macro_rules! impl_cpu_set {
     ($this:ident, $mask:ident) => {
-        $this::write($this::read() | $mask);
+        <$this as $crate::cpu::RegisterWrite<_>>::write(
+            <$this as $crate::cpu::RegisterRead<_>>::read() | $mask,
+        )
     };
 }
 
@@ -108,6 +110,8 @@ macro_rules! impl_cpu_set {
 #[macro_export]
 macro_rules! impl_cpu_clear {
     ($this:ident, $mask:ident) => {
-        $this::write($this::read() & !$mask);
+        <$this as $crate::cpu::RegisterWrite<_>>::write(
+            <$this as $crate::cpu::RegisterRead<_>>::read() & !$mask,
+        )
     };
 }
