@@ -9,8 +9,6 @@
 pub mod cpu;
 pub mod voladdr;
 
-mod macros;
-
 use core::ops::{BitAnd, BitOr, Not, Shl, Shr};
 
 /// Represents any type that can be used as
