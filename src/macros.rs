@@ -57,7 +57,7 @@ macro_rules! define_cpu_register {
     (@internal, $num_ty:ty, $register:ident, w $name:ident: $bit:literal) => {
         /// Set the value of this inside the CPU register.
         pub fn set(x: bool) {
-            const MASK: $num_ty = 0 << $bit;
+            const MASK: $num_ty = 1 << $bit;
             match x {
                 true => <super::$register as $crate::cpu::RegisterWrite<$num_ty>>::set(MASK),
                 false => <super::$register as $crate::cpu::RegisterWrite<$num_ty>>::clear(MASK),

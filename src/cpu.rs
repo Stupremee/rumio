@@ -27,3 +27,87 @@ pub trait RegisterWrite<I: crate::Int> {
     /// your architecture doesn't have a bit clear instruction.
     fn clear(mask: I);
 }
+
+/// Provide a simple implementation for the [`RegisterWrite::set()`] method.
+///
+/// Put this macro into your [`set`](RegisterWrite::set) implementation for [`RegisterWrite`].
+/// This macro only works if the register implements [`RegisterRead`],
+/// because it will first read the value, set the bits, and write the value to this register.
+///
+/// The same can be done for [`clear`](RegisterWrite::clear) using the [`impl_cpu_clear`] macro.
+///
+/// # Example
+///
+/// ```
+/// # use rumio::cpu::{RegisterRead, RegisterWrite};
+/// pub struct CpuRegister;
+///
+/// impl RegisterRead<u64> for CpuRegister {
+///     fn read() -> u64 {
+///         // ...
+///         # unimplemented!()
+///     }
+/// }
+///
+/// impl RegisterWrite<u64> for CpuRegister {
+///     fn write(val: u64) {
+///         // ...
+///     }
+///
+///     fn set(mask: u64) {
+///         rumio::impl_cpu_set!(Self, mask);
+///     }
+///
+///     fn clear(mask: u64) {
+///         rumio::impl_cpu_clear!(Self, mask);
+///     }
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_cpu_set {
+    ($this:ident, $mask:ident) => {
+        $this::write($this::read() | $mask);
+    };
+}
+
+/// Provide a simple implementation for the [`RegisterWrite::clear()`] method.
+///
+/// Put this macro into your [`clear`](RegisterWrite::clear) implementation for [`RegisterWrite`].
+/// This macro only works if the register implements [`RegisterRead`],
+/// because it will first read the value, clear the bits, and write the value to this register.
+///
+/// The same can be done for [`set`](RegisterWrite::set) using the [`impl_cpu_set`] macro.
+///
+/// # Example
+///
+/// ```
+/// # use rumio::cpu::{RegisterRead, RegisterWrite};
+/// pub struct CpuRegister;
+///
+/// impl RegisterRead<u64> for CpuRegister {
+///     fn read() -> u64 {
+///         // ...
+///         # unimplemented!()
+///     }
+/// }
+///
+/// impl RegisterWrite<u64> for CpuRegister {
+///     fn write(val: u64) {
+///         // ...
+///     }
+///
+///     fn set(mask: u64) {
+///         rumio::impl_cpu_set!(Self, mask);
+///     }
+///
+///     fn clear(mask: u64) {
+///         rumio::impl_cpu_clear!(Self, mask);
+///     }
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_cpu_clear {
+    ($this:ident, $mask:ident) => {
+        $this::write($this::read() & !$mask);
+    };
+}
