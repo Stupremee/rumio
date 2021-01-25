@@ -61,12 +61,12 @@ macro_rules! define_cpu_register {
         $($kind_variant:ident = $kind_variant_val:expr),*
     ]) => {
         /// Read the raw bits from the register, and then try to map them to an enum.
-        pub fn get() -> ::std::option::Option<super::$kind_name> {
-            const BIT_LEN: usize = ::std::mem::size_of::<$num_ty>() * 8;
+        pub fn get() -> ::core::option::Option<super::$kind_name> {
+            const BIT_LEN: ::core::primitive::usize = ::core::mem::size_of::<$num_ty>() * 8;
             let val = <super::$register as $crate::cpu::RegisterRead<$num_ty>>::read();
             match $crate::get_bits(val, ($from, $to)) {
-                $($kind_variant_val => ::std::option::Option::Some(super::$kind_name::$kind_variant),)*
-                _ => ::std::option::Option::None,
+                $($kind_variant_val => ::core::option::Option::Some(super::$kind_name::$kind_variant),)*
+                _ => ::core::option::Option::None,
             }
         }
     };
@@ -76,7 +76,7 @@ macro_rules! define_cpu_register {
     ]) => {
         /// Set this bits to the given value.
         pub fn set(val: super::$kind_name) {
-            const BIT_LEN: usize = ::std::mem::size_of::<$num_ty>() * 8;
+            const BIT_LEN: ::core::primitive::usize = ::core::mem::size_of::<$num_ty>() * 8;
             let bits = match val {
                 $(super::$kind_name::$kind_variant => $kind_variant_val,)*
             };
@@ -97,7 +97,7 @@ macro_rules! define_cpu_register {
 
     (@internal, $num_ty:ty, $register:ident, r $name:ident: $bit:literal) => {
         /// Check if this bit is set inside the CPU register.
-        pub fn get() -> ::std::primitive::bool {
+        pub fn get() -> ::core::primitive::bool {
             let val = <super::$register as $crate::cpu::RegisterRead<$num_ty>>::read();
             val & (1 << $bit) != 0
         }
@@ -105,7 +105,7 @@ macro_rules! define_cpu_register {
 
     (@internal, $num_ty:ty, $register:ident, w $name:ident: $bit:literal) => {
         /// Set the value of this inside the CPU register.
-        pub fn set(x: ::std::primitive::bool) {
+        pub fn set(x: ::core::primitive::bool) {
             const MASK: $num_ty = 1 << $bit;
             match x {
                 true => <super::$register as $crate::cpu::RegisterWrite<$num_ty>>::set(MASK),

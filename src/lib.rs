@@ -1,3 +1,4 @@
+#![no_std]
 #![forbid(unsafe_code)]
 #![deny(
     // missing_docs,
@@ -9,7 +10,7 @@ pub mod cpu;
 
 mod macros;
 
-use std::ops::{BitAnd, BitOr, Not, Shl, Shr};
+use core::ops::{BitAnd, BitOr, Not, Shl, Shr};
 
 /// Represents any type that can be used as
 /// the underlying value for a register or bitfield.
@@ -58,7 +59,7 @@ mod sealed {
 /// assert_eq!(get_bits(x, (4, 6)), 0b001);
 /// ```
 pub fn get_bits<I: Int>(num: I, (start, end): (usize, usize)) -> I {
-    let bit_len = std::mem::size_of::<I>() * 8;
+    let bit_len = core::mem::size_of::<I>() * 8;
 
     // add `1` because this is an inclusive range.
     let end = end + 1;
@@ -91,7 +92,7 @@ pub fn get_bits<I: Int>(num: I, (start, end): (usize, usize)) -> I {
 /// assert_eq!(x, 0b11001);
 /// ```
 pub fn set_bits<I: Int>(num: I, (start, end): (usize, usize), bits: I) -> I {
-    let bit_len = std::mem::size_of::<I>() * 8;
+    let bit_len = core::mem::size_of::<I>() * 8;
 
     // add `1` because this is an inclusive range.
     let end = end + 1;
