@@ -43,6 +43,11 @@ macro_rules! define_mmio_register {
 
         #[allow(dead_code)]
         impl $reg_name {
+            /// Create a new instance of this register at the given address.
+            pub fn new(addr: $crate::mmio::VolAddr<$num_ty>) -> Self {
+                Self(addr)
+            }
+
             /// Perform a volatile read and return the raw valuue of this register.
             #[inline]
             pub fn read(&self) -> $num_ty {
@@ -193,10 +198,45 @@ macro_rules! define_mmio_register {
                 let val = $crate::mmio::VolAddr::read(self.0);
                 let val = match x {
                     true => val | MASK,
-                    false=> val & !MASK,
+                    false => val & !MASK,
                 };
                 $crate::mmio::VolAddr::write(self.0, val);
             }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! define_mmio_struct {
+    ($(#[$attr:meta])*
+     $pub:vis struct $name:ident {$(
+         $(#[$field_attr:meta])*
+         $field_offset:expr => $field_name:ident: $field_ty:ty
+    ),*$(,)?}) => {
+        $(#[$attr])*
+        #[derive(Clone, Copy)]
+        $pub struct $name($crate::mmio::VolAddr<()>);
+
+        impl $name {
+            /// Create a new MMIO region at the given address.
+            ///
+            /// # Safety
+            ///
+            /// The safety arguments of [`VolAddr`](rumio::mmio::VolAddr) and
+            /// it's `new` method must be guaranteed.
+            pub const unsafe fn new(addr: ::core::primitive::usize) -> Self {
+                Self($crate::mmio::VolAddr::new(addr))
+            }
+
+            $($(#[$field_attr])*
+            #[allow(unused)]
+            pub fn $field_name(&self) -> $field_ty {
+                <$field_ty>::new(unsafe {
+                    $crate::mmio::VolAddr::cast(
+                        $crate::mmio::VolAddr::offset(self.0, $field_offset)
+                    )
+                })
+            })*
         }
     };
 }
