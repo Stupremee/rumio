@@ -73,6 +73,7 @@ impl<T> VolAddr<T> {
     /// This method is safe, because all safety guarantees must be provided
     /// when creating a new [`VolAddr`], and the [`Copy`] bound prevents the returning value
     /// from running code in the [`Drop`] implementation.
+    #[inline]
     pub fn read(self) -> T
     where
         T: Copy,
@@ -84,6 +85,7 @@ impl<T> VolAddr<T> {
     ///
     /// This method requires `T` to implement [`Copy`], because the [`Drop`]
     /// implementation would never be run if it's written to this address.
+    #[inline]
     pub fn write(self, val: T)
     where
         T: Copy,
@@ -91,3 +93,14 @@ impl<T> VolAddr<T> {
         unsafe { core::ptr::write_volatile(self.addr.get() as *mut T, val) }
     }
 }
+
+impl<T> Clone for VolAddr<T> {
+    fn clone(&self) -> Self {
+        Self {
+            addr: self.addr,
+            _type: PhantomData,
+        }
+    }
+}
+
+impl<T> Copy for VolAddr<T> {}

@@ -160,7 +160,7 @@ macro_rules! define_cpu_register {
         };
 
         $($(
-            $crate::define_cpu_register!(@internal_gen_kind, $num_ty,
+            $crate::__generate_field_kinds__!($num_ty,
                 $(#[$kind_attr])*
                 $kind_type $kind_name [
                     $(
@@ -284,45 +284,12 @@ macro_rules! define_cpu_register {
     };
 
     (@internal, $num_ty:ty, $register:ident, w $name:ident: $bit:literal) => {
-        /// Set the value of this inside the CPU register.
+        /// Set the value of this bit inside the CPU register.
         pub fn set(x: ::core::primitive::bool) {
             const MASK: $num_ty = 1 << $bit;
             match x {
                 true => <super::$register as $crate::cpu::RegisterWrite<$num_ty>>::set(MASK),
                 false => <super::$register as $crate::cpu::RegisterWrite<$num_ty>>::clear(MASK),
-            }
-        }
-    };
-
-    // =====================================
-    // Generate the kind enums and bitflags
-    // =====================================
-
-    (@internal_gen_kind, $num_ty:ty,
-        $(#[$attr:meta])*
-        enum $kind_name:ident [$(
-            $(#[$variant_attr:meta])*
-            $variant:ident = $variant_val:expr
-        ),*]
-    ) => {
-        $(#[$attr])*
-        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-        pub enum $kind_name {
-            $( $(#[$variant_attr])* $variant ),*
-        }
-    };
-
-    (@internal_gen_kind, $num_ty:ty,
-        $(#[$attr:meta])*
-        flags $kind_name:ident [$(
-            $(#[$variant_attr:meta])*
-            $variant:ident = $variant_val:expr
-        ),*]
-    ) => {
-        ::bitflags::bitflags! {
-            $(#[$attr])*
-            pub struct $kind_name: $num_ty {
-                $(const $variant = $variant_val;)*
             }
         }
     };
