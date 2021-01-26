@@ -1,7 +1,7 @@
 #![no_std]
 #![deny(
     // missing_docs,
-    rust_2018_idioms, broken_intra_doc_links, private_intra_doc_links,
+    clippy::all, rust_2018_idioms, broken_intra_doc_links, private_intra_doc_links,
 )]
 
 #[cfg(feature = "example_generated")]
