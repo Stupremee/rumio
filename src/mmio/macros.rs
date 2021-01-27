@@ -20,7 +20,7 @@ macro_rules! define_mmio_register {
         };
 
         $($(
-            $crate::__generate_field_kinds__!($num_ty,
+            $crate::__generate_field_kinds__!($num_ty, $from .. $to,
                 $(#[$kind_attr])*
                 $kind_type $kind_name [
                     $(
@@ -191,6 +191,12 @@ macro_rules! define_mmio_register {
 
     (@internal, $num_ty:ty, w $name:ident: $bit:literal) => {
         impl $name {
+            /// A `Value` that will set this bit to high when modifying a register.
+            pub const SET: $crate::Value<$num_ty> = $crate::Value::<$num_ty>::new(1 << $bit, 1 << $bit);
+
+            /// A `Value` that will set this bit to low when modifying a register.
+            pub const CLEAR: $crate::Value<$num_ty> = $crate::Value::<$num_ty>::new(1 << $bit, 0);
+
             /// Set the value of this bit inside the MMIO.
             #[allow(unused)]
             pub fn set(&self, x: ::core::primitive::bool) {

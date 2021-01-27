@@ -160,7 +160,7 @@ macro_rules! define_cpu_register {
         };
 
         $($(
-            $crate::__generate_field_kinds__!($num_ty,
+            $crate::__generate_field_kinds__!($num_ty, $from .. $to,
                 $(#[$kind_attr])*
                 $kind_type $kind_name [
                     $(
@@ -182,6 +182,32 @@ macro_rules! define_cpu_register {
                 )?);
             }
         )*
+
+        $crate::__generate_if_perm__! { @read
+            /// Read the raw value out of this CPU register.
+            pub fn read() -> $num_ty {
+                <$register as $crate::cpu::RegisterRead<$num_ty>>::read()
+            }
+            => $($perm) *
+        }
+
+        $crate::__generate_if_perm__! { @write
+            /// Write the raw value into this CPU register.
+            pub fn write(val: $num_ty) {
+                <$register as $crate::cpu::RegisterWrite<$num_ty>>::write(val);
+            }
+            => $($perm) *
+        }
+
+        $crate::__generate_if_perm__! { @write
+            /// Modify this register to match the given value.
+            pub fn modify(val: $crate::Value<$num_ty>) {
+                let reg = <$register as $crate::cpu::RegisterRead<$num_ty>>::read();
+                let reg = $crate::Value::<$num_ty>::modify(val, reg);
+                <$register as $crate::cpu::RegisterWrite<$num_ty>>::write(reg);
+            }
+            => $($perm) *
+        }
     };
 
     // =====================================
@@ -284,6 +310,12 @@ macro_rules! define_cpu_register {
     };
 
     (@internal, $num_ty:ty, $register:ident, w $name:ident: $bit:literal) => {
+        /// A `Value` that will set this bit to high when modifying a register.
+        pub const SET: $crate::Value<$num_ty> = $crate::Value::<$num_ty>::new(1 << $bit, 1 << $bit);
+
+        /// A `Value` that will set this bit to low when modifying a register.
+        pub const CLEAR: $crate::Value<$num_ty> = $crate::Value::<$num_ty>::new(1 << $bit, 0);
+
         /// Set the value of this bit inside the CPU register.
         pub fn set(x: ::core::primitive::bool) {
             const MASK: $num_ty = 1 << $bit;

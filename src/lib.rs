@@ -1,4 +1,4 @@
-#![no_std]
+//#![no_std]
 #![deny(
     // missing_docs,
     clippy::all, rust_2018_idioms, broken_intra_doc_links, private_intra_doc_links,
@@ -29,18 +29,55 @@ pub trait Int:
 {
 }
 
-impl Int for u8 {}
-impl Int for u16 {}
-impl Int for u32 {}
-impl Int for u64 {}
+/// This macro includes generation of `Int` implementation
+/// and generates a `Value::new` method for each type, to be able
+/// to make the `new` method const.
+macro_rules! impl_int {
+    ($($num:ty),*) => {
+        $(impl Value<$num> {
+            /// Create a new [`Value`] with the given mask and bits.
+            pub const fn new(mask: $num, bits: $num) -> Self {
+                Self {
+                    mask,
+                    bits: (bits & mask),
+                }
+            }
+        }
+        impl Int for $num {}
+        )*
+    };
+}
 
-mod sealed {
-    pub trait Sealed {}
+impl_int!(u8, u16, u32, u64);
 
-    impl Sealed for u8 {}
-    impl Sealed for u16 {}
-    impl Sealed for u32 {}
-    impl Sealed for u64 {}
+/// A value that can be applied to any register using
+/// the `modify` method.
+///
+/// This is also used to modify mulitple bitfields in one write operation.
+#[derive(Clone, Copy, Debug)]
+pub struct Value<I> {
+    mask: I,
+    bits: I,
+}
+
+impl<I: Int> Value<I> {
+    /// Modify all bits that are specified by this [`Value`] in
+    /// the given value and return the modified version.
+    #[inline]
+    pub fn modify(self, val: I) -> I {
+        (val & !self.mask) | self.bits
+    }
+}
+
+impl<I: Int> BitOr<Value<I>> for Value<I> {
+    type Output = Value<I>;
+
+    fn bitor(self, rhs: Value<I>) -> Self::Output {
+        Self {
+            mask: self.mask | rhs.mask,
+            bits: self.bits | rhs.bits,
+        }
+    }
 }
 
 /// Obtain the bits that are in the inclusive range of `(start, end)`.
@@ -102,5 +139,14 @@ pub fn set_bits<I: Int>(num: I, (start, end): (usize, usize), bits: I) -> I {
     let mask = !I::default() << (bit_len - end) >> (bit_len - end);
     let mask = !(mask >> start << start);
 
-    (num & mask) | (bits << start)
+    (num & mask) | ((bits << start) & !mask)
+}
+
+mod sealed {
+    pub trait Sealed {}
+
+    impl Sealed for u8 {}
+    impl Sealed for u16 {}
+    impl Sealed for u32 {}
+    impl Sealed for u64 {}
 }

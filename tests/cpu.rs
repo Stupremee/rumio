@@ -105,3 +105,17 @@ fn read_write_flags() {
     assert_reg_eq(0b11000101);
     assert_eq!(FLAGS::get(), Flags::B | Flags::C);
 }
+
+#[test]
+fn modify_values() {
+    reset_register();
+    assert_reg_eq(DEFAULT_REG_VALUE);
+
+    let val = Mode::B | BAZ::SET | Flags::A | Flags::B;
+    println!("{:x?}", val);
+    modify(val);
+
+    assert_eq!(FLAGS::get(), Flags::A | Flags::B);
+    assert_eq!(MODE::get(), Some(Mode::B));
+    assert!(BAZ::get());
+}
