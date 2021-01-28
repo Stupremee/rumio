@@ -44,20 +44,64 @@ macro_rules! define_mmio_register {
         #[allow(dead_code)]
         impl $reg_name {
             /// Create a new instance of this register at the given address.
-            pub fn new(addr: $crate::mmio::VolAddr<$num_ty>) -> Self {
+            #[inline]
+            pub const fn new(addr: $crate::mmio::VolAddr<$num_ty>) -> Self {
                 Self(addr)
             }
 
-            /// Perform a volatile read and return the raw valuue of this register.
-            #[inline]
-            pub fn read(&self) -> $num_ty {
-                $crate::mmio::VolAddr::read(self.0)
+            $crate::__generate_if_perm__! { @read
+                /// Get the raw value from this MMIO register.
+                pub fn get(self) -> $num_ty {
+                    $crate::mmio::VolAddr::<$num_ty>::read(self.0)
+                }
+                => $($perm) *
             }
 
-            /// Write the raw value into this register using a volatile write.
-            #[inline]
-            pub fn write(&self, val: $num_ty) {
-                $crate::mmio::VolAddr::write(self.0, val)
+            $crate::__generate_if_perm__! { @write
+                /// Write the raw value into this MMIO register.
+                pub fn set(self, val: $num_ty) {
+                    $crate::mmio::VolAddr::<$num_ty>::write(self.0, val);
+                }
+                => $($perm) *
+            }
+
+            $crate::__generate_if_perm__! { @read
+                /// Check if one of the given fields is set.
+                ///
+                /// Returns `true` if the value specified by the field is not null.
+                pub fn is_set<P: $crate::perm::Permission>(self, field: $crate::Field<$num_ty, P>) -> ::core::primitive::bool {
+                    let val = $crate::mmio::VolAddr::<$num_ty>::read(self.0);
+                    $crate::Field::<$num_ty, P>::read(field, val) != 0
+                }
+                => $($perm) *
+            }
+
+            $crate::__generate_if_perm__! { @read
+                /// Read the given field from this register.
+                pub fn read<P: $crate::perm::Permission>(self, field: $crate::Field<$num_ty, P>) -> $num_ty {
+                    let val = $crate::mmio::VolAddr::<$num_ty>::read(self.0);
+                    $crate::Field::<$num_ty, P>::read(field, val)
+                }
+                => $($perm) *
+            }
+
+            $crate::__generate_if_perm__! { @write
+                /// Write the given values into this register and set all other bits to 0.
+                pub fn write(self, val: $crate::Value<$num_ty>) {
+                    let val = $crate::Value::<$num_ty>::modify(val, 0);
+                    $crate::mmio::VolAddr::<$num_ty>::write(self.0, val);
+                }
+                => $($perm) *
+            }
+
+            $crate::__generate_if_perm__! { @read_write
+                /// Modify this register to match the given value, but keep all other bits untouched.
+                pub fn modify(self, val: $crate::Value<$num_ty>) {
+                    let reg = $crate::mmio::VolAddr::<$num_ty>::read(self.0);
+                    let reg = $crate::Value::<$num_ty>::modify(val, reg);
+                    $crate::mmio::VolAddr::<$num_ty>::write(self.0, reg);
+                }
+                => $($perm) *
             }
 
             $(#[allow(non_snake_case)]
@@ -100,7 +144,7 @@ macro_rules! define_mmio_register {
             /// all flags of this bit range.
             #[allow(unused)]
             pub fn get(&self) -> $kind_name {
-                let val = $crate::mmio::VolAddr::read(self.0);
+                let val = $crate::mmio::VolAddr::<$num_ty>::read(self.0);
                 $kind_name::from_bits_truncate($crate::get_bits(val, ($from, $to)))
             }
         }
@@ -114,8 +158,8 @@ macro_rules! define_mmio_register {
             #[allow(unused)]
             pub fn set(&self, flags: $kind_name) {
                 let bits = $kind_name::bits(&flags);
-                let val = $crate::mmio::VolAddr::read(self.0);
-                $crate::mmio::VolAddr::write(self.0, $crate::set_bits(val, ($from, $to), bits));
+                let val = $crate::mmio::VolAddr::<$num_ty>::read(self.0);
+                $crate::mmio::VolAddr::<$num_ty>::write(self.0, $crate::set_bits(val, ($from, $to), bits));
             }
         }
     };
@@ -143,7 +187,7 @@ macro_rules! define_mmio_register {
             /// Read the raw bits from the register, and then try to map them to an enum.
             #[allow(unused)]
             pub fn get(&self) -> ::core::option::Option<$kind_name> {
-                let val = $crate::mmio::VolAddr::read(self.0);
+                let val = $crate::mmio::VolAddr::<$num_ty>::read(self.0);
                 match $crate::get_bits(val, ($from, $to)) {
                     $($kind_variant_val => ::core::option::Option::Some($kind_name::$kind_variant),)*
                     _ => ::core::option::Option::None,
@@ -162,9 +206,9 @@ macro_rules! define_mmio_register {
                 let bits = match val {
                     $($kind_name::$kind_variant => $kind_variant_val,)*
                 };
-                let val = $crate::mmio::VolAddr::read(self.0);
+                let val = $crate::mmio::VolAddr::<$num_ty>::read(self.0);
                 let val = $crate::set_bits(val, ($from, $to), bits);
-                $crate::mmio::VolAddr::write(self.0, val);
+                $crate::mmio::VolAddr::<$num_ty>::write(self.0, val);
             }
         }
     };
@@ -173,23 +217,32 @@ macro_rules! define_mmio_register {
     // Read and write a single bit
     // =====================================
 
-    (@internal, $num_ty:ty, rw $name:ident: $bit:literal) => {
-        $crate::define_mmio_register!(@internal, $num_ty, r $name: $bit);
-        $crate::define_mmio_register!(@internal, $num_ty, w $name: $bit);
+    (@internal, $num_ty:ty, $perm:ident $name:ident: $bit:literal) => {
+        impl $name {
+            /// A `Field` that covers this single bit.
+            pub const FIELD: $crate::Field<$num_ty, $crate::__perm_for_name__!($perm)> = $crate::Field::<$num_ty, _>::new(1 << $bit);
+        }
+
+        $crate::define_mmio_register!(@internal_bit, $num_ty, $perm $name: $bit);
     };
 
-    (@internal, $num_ty:ty, r $name:ident: $bit:literal) => {
+    (@internal_bit, $num_ty:ty, rw $name:ident: $bit:literal) => {
+        $crate::define_mmio_register!(@internal_bit, $num_ty, r $name: $bit);
+        $crate::define_mmio_register!(@internal_bit, $num_ty, w $name: $bit);
+    };
+
+    (@internal_bit, $num_ty:ty, r $name:ident: $bit:literal) => {
         impl $name {
             /// Check if this bit is set inside the MMIO.
             #[allow(unused)]
             pub fn get(&self) -> ::core::primitive::bool {
-                let val = $crate::mmio::VolAddr::read(self.0);
+                let val = $crate::mmio::VolAddr::<$num_ty>::read(self.0);
                 val & (1 << $bit) != 0
             }
         }
     };
 
-    (@internal, $num_ty:ty, w $name:ident: $bit:literal) => {
+    (@internal_bit, $num_ty:ty, w $name:ident: $bit:literal) => {
         impl $name {
             /// A `Value` that will set this bit to high when modifying a register.
             pub const SET: $crate::Value<$num_ty> = $crate::Value::<$num_ty>::new(1 << $bit, 1 << $bit);
@@ -201,12 +254,12 @@ macro_rules! define_mmio_register {
             #[allow(unused)]
             pub fn set(&self, x: ::core::primitive::bool) {
                 const MASK: $num_ty = 1 << $bit;
-                let val = $crate::mmio::VolAddr::read(self.0);
+                let val = $crate::mmio::VolAddr::<$num_ty>::read(self.0);
                 let val = match x {
                     true => val | MASK,
                     false => val & !MASK,
                 };
-                $crate::mmio::VolAddr::write(self.0, val);
+                $crate::mmio::VolAddr::<$num_ty>::write(self.0, val);
             }
         }
     };
@@ -228,10 +281,10 @@ macro_rules! define_mmio_struct {
             ///
             /// # Safety
             ///
-            /// The safety arguments of [`VolAddr`](rumio::mmio::VolAddr) and
+            /// The safety arguments of `VolAddr` and
             /// it's `new` method must be guaranteed.
             pub const unsafe fn new(addr: ::core::primitive::usize) -> Self {
-                Self($crate::mmio::VolAddr::new(addr))
+                Self($crate::mmio::VolAddr::<()>::new(addr))
             }
 
             $($(#[$field_attr])*
