@@ -112,7 +112,6 @@ fn modify_values() {
     assert_reg_eq(DEFAULT_REG_VALUE);
 
     let val = Mode::B | BAZ::SET | Flags::A | Flags::B;
-    println!("{:x?}", val);
     modify(val);
 
     assert_eq!(FLAGS::get(), Flags::A | Flags::B);

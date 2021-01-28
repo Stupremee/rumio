@@ -43,6 +43,12 @@ macro_rules! impl_int {
                 }
             }
         }
+        impl Field<$num> {
+            /// Create a new [`Field`] that covers the given mask.
+            pub const fn new(mask: $num) -> Self {
+                Self { mask, }
+            }
+        }
         impl Int for $num {}
         )*
     };
@@ -76,6 +82,41 @@ impl<I: Int> BitOr<Value<I>> for Value<I> {
         Self {
             mask: self.mask | rhs.mask,
             bits: self.bits | rhs.bits,
+        }
+    }
+}
+
+/// Specifies a specific bit mask inside a register.
+#[derive(Clone, Copy, Debug)]
+#[repr(transparent)]
+pub struct Field<I> {
+    mask: I,
+}
+
+impl<I: Int> Field<I> {
+    /// Return all bits that were covered by this field.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rumio::Field;
+    /// # fn main() {
+    /// let field = Field::<u32>::new(0b11110);
+    /// let x = 0b10111u32;
+    /// assert_eq!(field.read(x), 0b10110);
+    /// # }
+    /// ```
+    pub fn read(self, val: I) -> I {
+        val & self.mask
+    }
+}
+
+impl<I: Int> BitOr<Field<I>> for Field<I> {
+    type Output = Field<I>;
+
+    fn bitor(self, rhs: Field<I>) -> Self::Output {
+        Self {
+            mask: self.mask | rhs.mask,
         }
     }
 }

@@ -25,6 +25,13 @@ macro_rules! __generate_field_kinds__ {
             }
         }
 
+        impl ::core::convert::From<$kind_name> for $crate::Field<$num_ty> {
+            fn from(x: $kind_name) -> $crate::Field<$num_ty> {
+                let mask = $crate::set_bits(0, ($from, $to), !0);
+                $crate::Field::<$num_ty>::new(mask)
+            }
+        }
+
         impl ::core::ops::BitOr<$crate::Value<$num_ty>> for $kind_name {
             type Output = $crate::Value<$num_ty>;
 
@@ -38,6 +45,22 @@ macro_rules! __generate_field_kinds__ {
 
             fn bitor(self, rhs: $kind_name) -> Self::Output {
                 <$kind_name as ::core::ops::BitOr<$crate::Value<$num_ty>>>::bitor(rhs, self)
+            }
+        }
+
+        impl ::core::ops::BitOr<$crate::Field<$num_ty>> for $kind_name {
+            type Output = $crate::Field<$num_ty>;
+
+            fn bitor(self, rhs: $crate::Field<$num_ty>) -> Self::Output {
+                $crate::Field::<$num_ty>::from(self) | rhs
+            }
+        }
+
+        impl ::core::ops::BitOr<$kind_name> for $crate::Field<$num_ty> {
+            type Output = $crate::Field<$num_ty>;
+
+            fn bitor(self, rhs: $kind_name) -> Self::Output {
+                <$kind_name as ::core::ops::BitOr<$crate::Field<$num_ty>>>::bitor(rhs, self)
             }
         }
     };
@@ -63,6 +86,13 @@ macro_rules! __generate_field_kinds__ {
             }
         }
 
+        impl ::core::convert::From<$kind_name> for $crate::Field<$num_ty> {
+            fn from(x: $kind_name) -> $crate::Field<$num_ty> {
+                let mask = $crate::set_bits(0, ($from, $to), !0);
+                $crate::Field::<$num_ty>::new(mask)
+            }
+        }
+
         impl ::core::ops::BitOr<$crate::Value<$num_ty>> for $kind_name {
             type Output = $crate::Value<$num_ty>;
 
@@ -76,6 +106,22 @@ macro_rules! __generate_field_kinds__ {
 
             fn bitor(self, rhs: $kind_name) -> Self::Output {
                 <$kind_name as ::core::ops::BitOr<$crate::Value<$num_ty>>>::bitor(rhs, self)
+            }
+        }
+
+        impl ::core::ops::BitOr<$crate::Field<$num_ty>> for $kind_name {
+            type Output = $crate::Field<$num_ty>;
+
+            fn bitor(self, rhs: $crate::Field<$num_ty>) -> Self::Output {
+                $crate::Field::<$num_ty>::from(self) | rhs
+            }
+        }
+
+        impl ::core::ops::BitOr<$kind_name> for $crate::Field<$num_ty> {
+            type Output = $crate::Field<$num_ty>;
+
+            fn bitor(self, rhs: $kind_name) -> Self::Output {
+                <$kind_name as ::core::ops::BitOr<$crate::Field<$num_ty>>>::bitor(rhs, self)
             }
         }
     };

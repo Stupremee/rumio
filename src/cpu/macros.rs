@@ -296,12 +296,19 @@ macro_rules! define_cpu_register {
     // Read and write a single bit
     // =====================================
 
-    (@internal, $num_ty:ty, $register:ident, rw $name:ident: $bit:literal) => {
-        $crate::define_cpu_register!(@internal, $num_ty, $register, r $name: $bit);
-        $crate::define_cpu_register!(@internal, $num_ty, $register, w $name: $bit);
+    (@internal, $num_ty:ty, $register:ident, $perm:ident $name:ident: $bit:literal) => {
+        /// A `Field` that covers this single bit.
+        pub const FIELD: $crate::Field<$num_ty> = $crate::Field::<$num_ty>::new(1 << $bit);
+
+        $crate::define_cpu_register!(@internal_bit, $num_ty, $register, $perm $name: $bit);
     };
 
-    (@internal, $num_ty:ty, $register:ident, r $name:ident: $bit:literal) => {
+    (@internal_bit, $num_ty:ty, $register:ident, rw $name:ident: $bit:literal) => {
+        $crate::define_cpu_register!(@internal_bit, $num_ty, $register, r $name: $bit);
+        $crate::define_cpu_register!(@internal_bit, $num_ty, $register, w $name: $bit);
+    };
+
+    (@internal_bit, $num_ty:ty, $register:ident, r $name:ident: $bit:literal) => {
         /// Check if this bit is set inside the CPU register.
         pub fn get() -> ::core::primitive::bool {
             let val = <super::$register as $crate::cpu::RegisterRead<$num_ty>>::read();
@@ -309,7 +316,7 @@ macro_rules! define_cpu_register {
         }
     };
 
-    (@internal, $num_ty:ty, $register:ident, w $name:ident: $bit:literal) => {
+    (@internal_bit, $num_ty:ty, $register:ident, w $name:ident: $bit:literal) => {
         /// A `Value` that will set this bit to high when modifying a register.
         pub const SET: $crate::Value<$num_ty> = $crate::Value::<$num_ty>::new(1 << $bit, 1 << $bit);
 
