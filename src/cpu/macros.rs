@@ -184,23 +184,52 @@ macro_rules! define_cpu_register {
         )*
 
         $crate::__generate_if_perm__! { @read
-            /// Read the raw value out of this CPU register.
-            pub fn read() -> $num_ty {
+            /// Get the raw value out of this CPU register.
+            pub fn get() -> $num_ty {
                 <$register as $crate::cpu::RegisterRead<$num_ty>>::read()
+            }
+            => $($perm) *
+        }
+
+        $crate::__generate_if_perm__! { @read
+            /// Read the given field from this register.
+            pub fn read(field: $crate::Field<$num_ty>) -> $num_ty {
+                let val = <$register as $crate::cpu::RegisterRead<$num_ty>>::read();
+                $crate::Field::<$num_ty>::read(field, val)
+            }
+            => $($perm) *
+        }
+
+        $crate::__generate_if_perm__! { @read
+            /// Check if one of the given fields is set.
+            ///
+            /// Returns `true` if the value specified by the field is not null.
+            pub fn is_set(field: $crate::Field<$num_ty>) -> ::core::primitive::bool {
+                let val = <$register as $crate::cpu::RegisterRead<$num_ty>>::read();
+                $crate::Field::<$num_ty>::read(field, val) != 0
             }
             => $($perm) *
         }
 
         $crate::__generate_if_perm__! { @write
             /// Write the raw value into this CPU register.
-            pub fn write(val: $num_ty) {
+            pub fn set(val: $num_ty) {
                 <$register as $crate::cpu::RegisterWrite<$num_ty>>::write(val);
             }
             => $($perm) *
         }
 
         $crate::__generate_if_perm__! { @write
-            /// Modify this register to match the given value.
+            /// Write the given values into this register and set all other bits to 0.
+            pub fn write(val: $crate::Value<$num_ty>) {
+                let val = $crate::Value::<$num_ty>::modify(val, 0);
+                <$register as $crate::cpu::RegisterWrite<$num_ty>>::write(val);
+            }
+            => $($perm) *
+        }
+
+        $crate::__generate_if_perm__! { @read_write
+            /// Modify this register to match the given value, but keep all other bits untouched.
             pub fn modify(val: $crate::Value<$num_ty>) {
                 let reg = <$register as $crate::cpu::RegisterRead<$num_ty>>::read();
                 let reg = $crate::Value::<$num_ty>::modify(val, reg);

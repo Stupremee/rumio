@@ -59,62 +59,67 @@ rumio::define_cpu_register! { CpuRegister as u64 =>
 }
 
 #[test]
-fn read_write_single_bit() {
-    reset_register();
-    assert_reg_eq(DEFAULT_REG_VALUE);
-
-    assert!(FOO::get());
-
-    assert!(!BAR::get());
-    assert!(!BAZ::get());
-
-    BAR::set(true);
-    assert_reg_eq(0b1101);
-    assert!(BAR::get());
-    assert!(!BAZ::get());
-
-    BAZ::set(true);
-    assert_reg_eq(0b11101);
-    assert!(BAZ::get());
+fn foo() {
+    modify(Mode::A.into());
 }
 
-#[test]
-fn read_write_enum() {
-    reset_register();
-    assert_reg_eq(DEFAULT_REG_VALUE);
+//#[test]
+//fn read_write_single_bit() {
+//reset_register();
+//assert_reg_eq(DEFAULT_REG_VALUE);
 
-    assert_eq!(MODE::get(), Some(Mode::B));
+//assert!(FOO::get());
 
-    MODE::set(Mode::C);
-    assert_reg_eq(0b110);
-    assert_eq!(MODE::get(), Some(Mode::C));
-}
+//assert!(!BAR::get());
+//assert!(!BAZ::get());
 
-#[test]
-fn read_write_flags() {
-    reset_register();
-    assert_reg_eq(DEFAULT_REG_VALUE);
+//BAR::set(true);
+//assert_reg_eq(0b1101);
+//assert!(BAR::get());
+//assert!(!BAZ::get());
 
-    assert_eq!(FLAGS::get(), Flags::empty());
+//BAZ::set(true);
+//assert_reg_eq(0b11101);
+//assert!(BAZ::get());
+//}
 
-    FLAGS::set(Flags::A | Flags::C);
-    assert_reg_eq(0b10100101);
-    assert_eq!(FLAGS::get(), Flags::A | Flags::C);
+//#[test]
+//fn read_write_enum() {
+//reset_register();
+//assert_reg_eq(DEFAULT_REG_VALUE);
 
-    FLAGS::set(Flags::B | Flags::C);
-    assert_reg_eq(0b11000101);
-    assert_eq!(FLAGS::get(), Flags::B | Flags::C);
-}
+//assert_eq!(MODE::get(), Some(Mode::B));
 
-#[test]
-fn modify_values() {
-    reset_register();
-    assert_reg_eq(DEFAULT_REG_VALUE);
+//MODE::set(Mode::C);
+//assert_reg_eq(0b110);
+//assert_eq!(MODE::get(), Some(Mode::C));
+//}
 
-    let val = Mode::B | BAZ::SET | Flags::A | Flags::B;
-    modify(val);
+//#[test]
+//fn read_write_flags() {
+//reset_register();
+//assert_reg_eq(DEFAULT_REG_VALUE);
 
-    assert_eq!(FLAGS::get(), Flags::A | Flags::B);
-    assert_eq!(MODE::get(), Some(Mode::B));
-    assert!(BAZ::get());
-}
+//assert_eq!(FLAGS::get(), Flags::empty());
+
+//FLAGS::set(Flags::A | Flags::C);
+//assert_reg_eq(0b10100101);
+//assert_eq!(FLAGS::get(), Flags::A | Flags::C);
+
+//FLAGS::set(Flags::B | Flags::C);
+//assert_reg_eq(0b11000101);
+//assert_eq!(FLAGS::get(), Flags::B | Flags::C);
+//}
+
+//#[test]
+//fn modify_values() {
+//reset_register();
+//assert_reg_eq(DEFAULT_REG_VALUE);
+
+//let val = Mode::B | BAZ::SET | Flags::A | Flags::B;
+//modify(val);
+
+//assert_eq!(FLAGS::get(), Flags::A | Flags::B);
+//assert_eq!(MODE::get(), Some(Mode::B));
+//assert!(BAZ::get());
+//}

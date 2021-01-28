@@ -153,4 +153,28 @@ macro_rules! __generate_if_perm__ {
     (@internal_write $code:item => $_:tt $($perms:tt)*) => {
         $crate::__generate_if_perm__!(@internal_write $code => $($perms)*);
     };
+
+    (@read_write $code:item => $($perms:tt)*) => {
+        $crate::__generate_if_perm__!(@internal_read_write $code => $($perms)*);
+    };
+
+    (@internal_read_write $code:item => rw $($perms:tt)*) => { $code };
+    (@internal_read_write $code:item => r $($perms:tt)*) => {
+        $crate::__generate_if_perm__!(@internal_read_write_r $code => $($perms)*);
+    };
+    (@internal_read_write $code:item => w $($perms:tt)*) => {
+        $crate::__generate_if_perm__!(@internal_read_write_w $code => $($perms)*);
+    };
+
+    (@internal_read_write_r $code:item =>) => {};
+    (@internal_read_write_r $code:item => w $($perms:tt)*) => { $code };
+    (@internal_read_write_r $code:item => $_:tt $($perms:tt)*) => {
+        $crate::__generate_if_perm__!(@internal_read_write_r $code => $($perms)*);
+    };
+
+    (@internal_read_write_w $code:item =>) => {};
+    (@internal_read_write_w $code:item => r $($perms:tt)*) => { $code };
+    (@internal_read_write_w $code:item => $_:tt $($perms:tt)*) => {
+        $crate::__generate_if_perm__!(@internal_read_write_w $code => $($perms)*);
+    };
 }
