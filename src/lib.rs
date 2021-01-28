@@ -123,13 +123,13 @@ impl<I: Int, P: Permission> Field<I, P> {
 impl<I, P1, P2> BitOr<Field<I, P2>> for Field<I, P1>
 where
     I: Int,
-    P1: perm::CompatibleWith<P1, P2>,
-    P2: perm::CompatibleWith<P2, P1>,
+    P1: perm::Compatible<P1, P2>,
+    P2: Permission,
 {
-    type Output = Field<I, P1>;
+    type Output = Field<I, <P1 as perm::Compatible<P1, P2>>::Output>;
 
     fn bitor(self, rhs: Field<I, P2>) -> Self::Output {
-        Self {
+        Field {
             mask: self.mask | rhs.mask,
             __perm: PhantomData,
         }

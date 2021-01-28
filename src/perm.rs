@@ -17,7 +17,9 @@ impl Permission for ReadOnly {}
 impl Readable for ReadOnly {}
 impl Sealed for ReadOnly {}
 
-impl<P: Readable> CompatibleWith<ReadOnly, P> for ReadOnly {}
+impl<P: Readable> Compatible<ReadOnly, P> for ReadOnly {
+    type Output = ReadOnly;
+}
 
 /// Represents a write-only permission.
 pub enum WriteOnly {}
@@ -25,7 +27,9 @@ impl Permission for WriteOnly {}
 impl Writable for WriteOnly {}
 impl Sealed for WriteOnly {}
 
-impl<P: Writable> CompatibleWith<WriteOnly, P> for WriteOnly {}
+impl<P: Writable> Compatible<WriteOnly, P> for WriteOnly {
+    type Output = WriteOnly;
+}
 
 /// Represents a read-write permission.
 pub enum ReadWrite {}
@@ -34,7 +38,11 @@ impl Readable for ReadWrite {}
 impl Writable for ReadWrite {}
 impl Sealed for ReadWrite {}
 
-impl<P: Permission> CompatibleWith<ReadWrite, P> for ReadWrite {}
+impl<P: Permission> Compatible<ReadWrite, P> for ReadWrite {
+    type Output = P;
+}
 
 /// Marker trait that makes two permission types compatible.
-pub trait CompatibleWith<P1, P2>: Sealed {}
+pub trait Compatible<P1, P2>: Sealed {
+    type Output: Permission;
+}

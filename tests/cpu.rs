@@ -56,6 +56,8 @@ rumio::define_cpu_register! { CpuRegister as u64 =>
         C = 0b0100,
         D = 0b1000,
     ],
+
+    w WRITE: 9,
 }
 
 #[test]
@@ -124,11 +126,11 @@ fn read_fields() {
     reset_register();
     assert_reg_eq(DEFAULT_REG_VALUE);
 
-    let x = read(Mode::field() | FOO::FIELD | BAZ::FIELD);
+    let x = read(FOO::FIELD | Mode::field() | BAZ::FIELD);
     assert_eq!(x, 0b101);
     assert_reg_eq(DEFAULT_REG_VALUE);
 
     BAZ::set(true);
-    let x = read(Mode::field() | FOO::FIELD | BAZ::FIELD);
+    let x = read(FOO::FIELD | Mode::field() | BAZ::FIELD);
     assert_eq!(x, 0b10101);
 }
