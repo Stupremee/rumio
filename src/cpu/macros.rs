@@ -160,7 +160,7 @@ macro_rules! define_cpu_register {
         };
 
         $($(
-            $crate::__generate_field_kinds__!($num_ty, $from .. $to,
+            $crate::__generate_field_kinds__!($num_ty, $perm, $from .. $to,
                 $(#[$kind_attr])*
                 $kind_type $kind_name [
                     $(
@@ -193,9 +193,9 @@ macro_rules! define_cpu_register {
 
         $crate::__generate_if_perm__! { @read
             /// Read the given field from this register.
-            pub fn read(field: $crate::Field<$num_ty>) -> $num_ty {
+            pub fn read<P: $crate::perm::Readable>(field: $crate::Field<$num_ty, P>) -> $num_ty {
                 let val = <$register as $crate::cpu::RegisterRead<$num_ty>>::read();
-                $crate::Field::<$num_ty>::read(field, val)
+                $crate::Field::<$num_ty, P>::read(field, val)
             }
             => $($perm) *
         }
@@ -204,9 +204,9 @@ macro_rules! define_cpu_register {
             /// Check if one of the given fields is set.
             ///
             /// Returns `true` if the value specified by the field is not null.
-            pub fn is_set(field: $crate::Field<$num_ty>) -> ::core::primitive::bool {
+            pub fn is_set<P: $crate::perm::Readable>(field: $crate::Field<$num_ty, P>) -> ::core::primitive::bool {
                 let val = <$register as $crate::cpu::RegisterRead<$num_ty>>::read();
-                $crate::Field::<$num_ty>::read(field, val) != 0
+                $crate::Field::<$num_ty, P>::read(field, val) != 0
             }
             => $($perm) *
         }
@@ -327,7 +327,7 @@ macro_rules! define_cpu_register {
 
     (@internal, $num_ty:ty, $register:ident, $perm:ident $name:ident: $bit:literal) => {
         /// A `Field` that covers this single bit.
-        pub const FIELD: $crate::Field<$num_ty> = $crate::Field::<$num_ty>::new(1 << $bit);
+        pub const FIELD: $crate::Field<$num_ty, $crate::__perm_for_name__!($perm)> = $crate::Field::<$num_ty, _>::new(1 << $bit);
 
         $crate::define_cpu_register!(@internal_bit, $num_ty, $register, $perm $name: $bit);
     };

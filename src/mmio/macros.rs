@@ -20,7 +20,7 @@ macro_rules! define_mmio_register {
         };
 
         $($(
-            $crate::__generate_field_kinds__!($num_ty, $from .. $to,
+            $crate::__generate_field_kinds__!($num_ty, $perm, $from .. $to,
                 $(#[$kind_attr])*
                 $kind_type $kind_name [
                     $(

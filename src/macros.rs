@@ -1,7 +1,7 @@
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __generate_field_kinds__ {
-    ($num_ty:ty, $from:literal .. $to:literal,
+    ($num_ty:ty, $perm:ident, $from:literal .. $to:literal,
         $(#[$attr:meta])*
         enum $kind_name:ident [$(
             $(#[$variant_attr:meta])*
@@ -15,6 +15,14 @@ macro_rules! __generate_field_kinds__ {
             $( $(#[$variant_attr])* $variant ),*
         }
 
+        impl $kind_name {
+            /// Return the field that covers the range of this enum.
+            pub fn field() -> $crate::Field<$num_ty, $crate::__perm_for_name__!($perm)> {
+                let mask = $crate::set_bits(0, ($from, $to), !0);
+                $crate::Field::<$num_ty, $crate::__perm_for_name__!($perm)>::new(mask)
+            }
+        }
+
         impl ::core::convert::From<$kind_name> for $crate::Value<$num_ty> {
             fn from(x: $kind_name) -> $crate::Value<$num_ty> {
                 let mask = $crate::set_bits(0, ($from, $to), !0);
@@ -22,13 +30,6 @@ macro_rules! __generate_field_kinds__ {
                     $($kind_name::$variant => $variant_val,)*
                 };
                 $crate::Value::<$num_ty>::new(mask, bits << $from)
-            }
-        }
-
-        impl ::core::convert::From<$kind_name> for $crate::Field<$num_ty> {
-            fn from(x: $kind_name) -> $crate::Field<$num_ty> {
-                let mask = $crate::set_bits(0, ($from, $to), !0);
-                $crate::Field::<$num_ty>::new(mask)
             }
         }
 
@@ -47,25 +48,9 @@ macro_rules! __generate_field_kinds__ {
                 <$kind_name as ::core::ops::BitOr<$crate::Value<$num_ty>>>::bitor(rhs, self)
             }
         }
-
-        impl ::core::ops::BitOr<$crate::Field<$num_ty>> for $kind_name {
-            type Output = $crate::Field<$num_ty>;
-
-            fn bitor(self, rhs: $crate::Field<$num_ty>) -> Self::Output {
-                $crate::Field::<$num_ty>::from(self) | rhs
-            }
-        }
-
-        impl ::core::ops::BitOr<$kind_name> for $crate::Field<$num_ty> {
-            type Output = $crate::Field<$num_ty>;
-
-            fn bitor(self, rhs: $kind_name) -> Self::Output {
-                <$kind_name as ::core::ops::BitOr<$crate::Field<$num_ty>>>::bitor(rhs, self)
-            }
-        }
     };
 
-    ($num_ty:ty, $from:literal .. $to:literal,
+    ($num_ty:ty, $perm:ident, $from:literal .. $to:literal,
         $(#[$attr:meta])*
         flags $kind_name:ident [$(
             $(#[$variant_attr:meta])*
@@ -79,17 +64,18 @@ macro_rules! __generate_field_kinds__ {
             }
         }
 
+        impl $kind_name {
+            /// Return the field that covers the range of this enum.
+            pub fn field() -> $crate::Field<$num_ty, $crate::__perm_for_name__!($perm)> {
+                let mask = $crate::set_bits(0, ($from, $to), !0);
+                $crate::Field::<$num_ty, $crate::__perm_for_name__!($perm)>::new(mask)
+            }
+        }
+
         impl ::core::convert::From<$kind_name> for $crate::Value<$num_ty> {
             fn from(x: $kind_name) -> $crate::Value<$num_ty> {
                 let mask = $crate::set_bits(0, ($from, $to), !0);
                 $crate::Value::<$num_ty>::new(mask, $kind_name::bits(&x) << $from)
-            }
-        }
-
-        impl ::core::convert::From<$kind_name> for $crate::Field<$num_ty> {
-            fn from(x: $kind_name) -> $crate::Field<$num_ty> {
-                let mask = $crate::set_bits(0, ($from, $to), !0);
-                $crate::Field::<$num_ty>::new(mask)
             }
         }
 
@@ -106,22 +92,6 @@ macro_rules! __generate_field_kinds__ {
 
             fn bitor(self, rhs: $kind_name) -> Self::Output {
                 <$kind_name as ::core::ops::BitOr<$crate::Value<$num_ty>>>::bitor(rhs, self)
-            }
-        }
-
-        impl ::core::ops::BitOr<$crate::Field<$num_ty>> for $kind_name {
-            type Output = $crate::Field<$num_ty>;
-
-            fn bitor(self, rhs: $crate::Field<$num_ty>) -> Self::Output {
-                $crate::Field::<$num_ty>::from(self) | rhs
-            }
-        }
-
-        impl ::core::ops::BitOr<$kind_name> for $crate::Field<$num_ty> {
-            type Output = $crate::Field<$num_ty>;
-
-            fn bitor(self, rhs: $kind_name) -> Self::Output {
-                <$kind_name as ::core::ops::BitOr<$crate::Field<$num_ty>>>::bitor(rhs, self)
             }
         }
     };
@@ -176,5 +146,23 @@ macro_rules! __generate_if_perm__ {
     (@internal_read_write_w $code:item => r $($perms:tt)*) => { $code };
     (@internal_read_write_w $code:item => $_:tt $($perms:tt)*) => {
         $crate::__generate_if_perm__!(@internal_read_write_w $code => $($perms)*);
+    };
+}
+
+/// Hidden macro that converts a identifier like `r`, `w` and `rw`
+/// to a type defined in the `perm` module.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __perm_for_name__ {
+    (r) => {
+        $crate::perm::ReadOnly
+    };
+
+    (w) => {
+        $crate::perm::WriteOnly
+    };
+
+    (rw) => {
+        $crate::perm::ReadWrite
     };
 }

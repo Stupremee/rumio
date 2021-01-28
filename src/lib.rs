@@ -9,10 +9,15 @@ pub mod example_generated;
 
 pub mod cpu;
 pub mod mmio;
+pub mod perm;
 
 mod macros;
 
-use core::ops::{BitAnd, BitOr, Not, Shl, Shr};
+use core::{
+    marker::PhantomData,
+    ops::{BitAnd, BitOr, Not, Shl, Shr},
+};
+use perm::Permission;
 
 /// Represents any type that can be used as
 /// the underlying value for a register or bitfield.
@@ -43,10 +48,13 @@ macro_rules! impl_int {
                 }
             }
         }
-        impl Field<$num> {
+        impl<P> Field<$num, P> {
             /// Create a new [`Field`] that covers the given mask.
             pub const fn new(mask: $num) -> Self {
-                Self { mask, }
+                Self {
+                    mask,
+                    __perm: PhantomData,
+                }
             }
         }
         impl Int for $num {}
@@ -89,19 +97,20 @@ impl<I: Int> BitOr<Value<I>> for Value<I> {
 /// Specifies a specific bit mask inside a register.
 #[derive(Clone, Copy, Debug)]
 #[repr(transparent)]
-pub struct Field<I> {
+pub struct Field<I, P> {
     mask: I,
+    __perm: PhantomData<P>,
 }
 
-impl<I: Int> Field<I> {
+impl<I: Int, P: Permission> Field<I, P> {
     /// Return all bits that were covered by this field.
     ///
     /// # Example
     ///
     /// ```
-    /// # use rumio::Field;
+    /// # use rumio::{perm, Field};
     /// # fn main() {
-    /// let field = Field::<u32>::new(0b11110);
+    /// let field = Field::<u32, perm::ReadWrite>::new(0b11110);
     /// let x = 0b10111u32;
     /// assert_eq!(field.read(x), 0b10110);
     /// # }
@@ -111,12 +120,18 @@ impl<I: Int> Field<I> {
     }
 }
 
-impl<I: Int> BitOr<Field<I>> for Field<I> {
-    type Output = Field<I>;
+impl<I, P1, P2> BitOr<Field<I, P2>> for Field<I, P1>
+where
+    I: Int,
+    P1: perm::CompatibleWith<P1, P2>,
+    P2: perm::CompatibleWith<P2, P1>,
+{
+    type Output = Field<I, P1>;
 
-    fn bitor(self, rhs: Field<I>) -> Self::Output {
+    fn bitor(self, rhs: Field<I, P2>) -> Self::Output {
         Self {
             mask: self.mask | rhs.mask,
+            __perm: PhantomData,
         }
     }
 }
