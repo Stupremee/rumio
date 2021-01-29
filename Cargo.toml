@@ -4,6 +4,13 @@ description = "Control your MMIO and CPU registers without pain."
 version = "0.1.0"
 authors = ["Justus K <justus.k@protonmail.com>"]
 edition = "2018"
+documentation = "https://docs.rs/rumio"
+repository = "https://github.com/Stupremee/rumio"
+homepage = "https://github.com/Stupremee/rumio"
+license = "MIT/Apache-2.0"
+readme = "README.md"
+keywords = ["embedded", "registers", "mmio", "cpu"]
+categories = ["embedded", "hardware-support", "no-std"]
 
 [dependencies]
 bitflags = "1"
