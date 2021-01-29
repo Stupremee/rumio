@@ -4,6 +4,62 @@ mod macros;
 
 use core::{marker::PhantomData, num::NonZeroUsize};
 
+/// A structure that represents any type, and can be used
+/// to have any type inside a MMIO struct.
+///
+/// # Example
+///
+/// ```
+/// # use rumio::mmio::Lit;
+///
+/// rumio::define_mmio_struct! {
+///     pub struct Device {
+///         0x00 => one: Lit<u64>,
+///         0x08 => two: Lit<u8>,
+///     }
+/// }
+/// ```
+#[derive(Clone, Copy)]
+pub struct Lit<T>(pub VolAddr<T>);
+
+impl<T> Lit<T> {
+    /// Create a new `Lit` at the given address.
+    pub fn new(addr: VolAddr<T>) -> Self {
+        Self(addr)
+    }
+
+    /// Perfoms a volatile read of this address, and returns a copy of the inner `T`.
+    ///
+    /// This method is safe, because all safety guarantees must be provided
+    /// when creating a new [`VolAddr`], and the [`Copy`] bound prevents the returning value
+    /// from running code in the [`Drop`] implementation.
+    pub fn read(self) -> T
+    where
+        T: Copy,
+    {
+        self.0.read()
+    }
+
+    /// Perfoms a volatile read of this address, and returns the inner `T`.
+    ///
+    /// # Safety
+    ///
+    /// This method doesn't require the `Copy` bound for `T`, and thus the caller
+    /// must make sure that dropping the returned value multiple times doesn't cause UB.
+    #[inline]
+    pub unsafe fn read_non_copy(self) -> T {
+        self.0.read_non_copy()
+    }
+
+    /// Performs a volatile write to this address using the given value.
+    ///
+    /// Note that the `Drop` implementation of `T` will never be run.
+    #[inline]
+    pub fn write(self, val: T) {
+        self.0.write(val);
+    }
+}
+
 /// An address that can only be accessed by volatile reads and writes.
 ///
 /// Note that this structure does not guarantee any synchronization
@@ -20,6 +76,8 @@ use core::{marker::PhantomData, num::NonZeroUsize};
 /// more customization and avoid the dependency.
 ///
 /// [valid]: https://doc.rust-lang.org/core/ptr/index.html#safety
+#[derive(Debug)]
+#[repr(transparent)]
 pub struct VolAddr<T> {
     addr: NonZeroUsize,
     _type: PhantomData<*mut T>,
@@ -81,15 +139,22 @@ impl<T> VolAddr<T> {
         unsafe { core::ptr::read_volatile(self.addr.get() as *mut T) }
     }
 
+    /// Perfoms a volatile read of this address, and returns the inner `T`.
+    ///
+    /// # Safety
+    ///
+    /// This method doesn't require the `Copy` bound for `T`, and thus the caller
+    /// must make sure that dropping the returned value multiple times doesn't cause UB.
+    #[inline]
+    pub unsafe fn read_non_copy(self) -> T {
+        core::ptr::read_volatile(self.addr.get() as *mut T)
+    }
+
     /// Performs a volatile write to this address using the given value.
     ///
-    /// This method requires `T` to implement [`Copy`], because the [`Drop`]
-    /// implementation would never be run if it's written to this address.
+    /// Note that the `Drop` implementation of `T` will never be run.
     #[inline]
-    pub fn write(self, val: T)
-    where
-        T: Copy,
-    {
+    pub fn write(self, val: T) {
         unsafe { core::ptr::write_volatile(self.addr.get() as *mut T, val) }
     }
 }

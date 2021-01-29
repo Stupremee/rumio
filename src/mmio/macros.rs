@@ -360,7 +360,7 @@ macro_rules! define_mmio_struct {
     ),*$(,)?}) => {
         $(#[$attr])*
         #[derive(Clone, Copy)]
-        $pub struct $name($crate::mmio::VolAddr<()>);
+        $pub struct $name($crate::mmio::VolAddr<u8>);
 
         impl $name {
             /// Create a new MMIO region at the given address.
@@ -370,7 +370,7 @@ macro_rules! define_mmio_struct {
             /// The safety arguments of `VolAddr` and
             /// it's `new` method must be guaranteed.
             pub const unsafe fn new(addr: ::core::primitive::usize) -> Self {
-                Self($crate::mmio::VolAddr::<()>::new(addr))
+                Self($crate::mmio::VolAddr::<u8>::new(addr))
             }
 
             $($(#[$field_attr])*

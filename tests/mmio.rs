@@ -1,3 +1,4 @@
+use rumio::mmio::Lit;
 use std::{mem::ManuallyDrop, ptr};
 
 struct MmioRegion {
@@ -48,6 +49,8 @@ rumio::define_mmio_struct! {
     pub struct Device {
         0x00 => one: Reg,
         0x08 => two: Reg,
+        0x0A => lit1: Lit<u32>,
+        0x0E => lit2: Lit<u8>,
     }
 }
 
@@ -94,5 +97,20 @@ fn read_write_flags() {
     assert_eq!(mmio.one().FLAGS().get(), Flags::B | Flags::C);
 
     mmio.two().FLAGS().set(Flags::A | Flags::C);
-    assert_eq!(mmio.one().FLAGS().get(), Flags::A | Flags::C);
+    assert_eq!(mmio.two().FLAGS().get(), Flags::A | Flags::C);
+}
+
+#[test]
+fn read_write_lit() {
+    let (_guard, addr) = MmioRegion::new(16);
+    let mmio = unsafe { Device::new(addr) };
+
+    assert_eq!(mmio.lit1().read(), 0);
+    assert_eq!(mmio.lit2().read(), 0);
+
+    mmio.lit1().write(0xF00D_BABE);
+    mmio.lit2().write(0xAB);
+
+    assert_eq!(mmio.lit1().read(), 0xF00D_BABE);
+    assert_eq!(mmio.lit2().read(), 0xAB);
 }
