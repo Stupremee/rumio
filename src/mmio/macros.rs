@@ -35,7 +35,7 @@
 ///
 ///
 /// To explore the whole generated api, take a look at the
-/// [`example_generated`](crate::example_generated) module on docs.rs
+/// `example_generated` module on docs.rs
 #[macro_export]
 macro_rules! define_mmio_register {
     ($(#[$reg_attr:meta])*
@@ -71,12 +71,12 @@ macro_rules! define_mmio_register {
 
         $(
             $(#[$field_attr])*
-            #[derive(Clone, Copy)]
+            #[derive(Clone, Copy, Debug, PartialEq, Eq)]
             pub struct $name($crate::mmio::VolAddr<$num_ty>);
         )*
 
         $(#[$reg_attr])*
-        #[derive(Clone, Copy)]
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
         pub struct $reg_name($crate::mmio::VolAddr<$num_ty>);
 
         #[allow(dead_code)]
@@ -350,7 +350,7 @@ macro_rules! define_mmio_register {
 ///
 ///
 /// To explore the whole generated api, take a look at the
-/// [`example_generated`](crate::example_generated) module on docs.rs
+/// `example_generated` module on docs.rs
 #[macro_export]
 macro_rules! define_mmio_struct {
     ($(#[$attr:meta])*
@@ -359,7 +359,7 @@ macro_rules! define_mmio_struct {
          $field_offset:expr => $field_name:ident: $field_ty:ty
     ),*$(,)?}) => {
         $(#[$attr])*
-        #[derive(Clone, Copy)]
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
         $pub struct $name($crate::mmio::VolAddr<u8>);
 
         impl $name {

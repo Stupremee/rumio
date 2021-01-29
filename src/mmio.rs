@@ -2,7 +2,7 @@
 
 mod macros;
 
-use core::{marker::PhantomData, num::NonZeroUsize};
+use core::{fmt, marker::PhantomData, num::NonZeroUsize};
 
 /// A structure that represents any type, and can be used
 /// to have any type inside a MMIO struct.
@@ -11,7 +11,6 @@ use core::{marker::PhantomData, num::NonZeroUsize};
 ///
 /// ```
 /// # use rumio::mmio::Lit;
-///
 /// rumio::define_mmio_struct! {
 ///     pub struct Device {
 ///         0x00 => one: Lit<u64>,
@@ -19,8 +18,8 @@ use core::{marker::PhantomData, num::NonZeroUsize};
 ///     }
 /// }
 /// ```
-#[derive(Clone, Copy)]
-pub struct Lit<T>(pub VolAddr<T>);
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Lit<T>(VolAddr<T>);
 
 impl<T> Lit<T> {
     /// Create a new `Lit` at the given address.
@@ -76,7 +75,6 @@ impl<T> Lit<T> {
 /// more customization and avoid the dependency.
 ///
 /// [valid]: https://doc.rust-lang.org/core/ptr/index.html#safety
-#[derive(Debug)]
 #[repr(transparent)]
 pub struct VolAddr<T> {
     addr: NonZeroUsize,
@@ -167,5 +165,33 @@ impl<T> Clone for VolAddr<T> {
         }
     }
 }
-
 impl<T> Copy for VolAddr<T> {}
+
+impl<T> fmt::Debug for VolAddr<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "VolAddr({:p})", self)
+    }
+}
+impl<T> fmt::Pointer for VolAddr<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:p}", self.addr.get() as *mut T)
+    }
+}
+
+impl<T> PartialEq for VolAddr<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.addr == other.addr
+    }
+}
+impl<T> Eq for VolAddr<T> {}
+
+impl<T> PartialOrd for VolAddr<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        self.addr.partial_cmp(&other.addr)
+    }
+}
+impl<T> Ord for VolAddr<T> {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        self.addr.cmp(&other.addr)
+    }
+}

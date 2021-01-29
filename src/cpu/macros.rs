@@ -127,7 +127,7 @@
 ///
 ///
 /// To explore the whole generated api, take a look at the
-/// [`example_generated`](crate::example_generated) module on docs.rs
+/// `example_generated` module on docs.rs
 ///
 ///
 /// [rr]: crate::cpu::RegisterRead
