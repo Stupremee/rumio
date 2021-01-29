@@ -1,3 +1,41 @@
+/// Define abstractions for a single register inside an MMIO block.
+///
+/// The macro looks almost the same as [`define_cpu_register`](crate::define_cpu_register),
+/// and all the field types and properties of the CPU register version apply here too.
+///
+/// **Note** that the generated struct for this register doesn't has the same layout
+/// as the given number type, and should always be constructed using the `new` method.
+///
+/// # Example
+///
+/// ```
+/// rumio::define_mmio_register! {
+///     Reg: u16 {
+///         rw MODE: 0..1 = enum Mode [
+///             A = 0b00,
+///             B = 0b01,
+///             C = 0b10,
+///             D = 0b11,
+///         ],
+///
+///         r FOO: 2,
+///
+///         rw BAR: 3,
+///         rw BAZ: 4,
+///
+///         rw FLAGS: 5..8 = flags Flags [
+///             A = 0b0001,
+///             B = 0b0010,
+///             C = 0b0100,
+///             D = 0b1000,
+///         ],
+///     }
+/// }
+/// ```
+///
+///
+/// To explore the whole generated api, take a look at the
+/// [`example_generated`](crate::example_generated) module on docs.rs
 #[macro_export]
 macro_rules! define_mmio_register {
     ($(#[$reg_attr:meta])*
@@ -265,6 +303,54 @@ macro_rules! define_mmio_register {
     };
 }
 
+/// Creates a struct which represents the MMIO block and all their registers.
+///
+/// **Note** that the generated struct **does not** has the same layout as
+/// you provided in this macro. So it must not be created like this:
+///
+/// ```ignore
+/// let registers = unsafe { &*(0x4000_8000 as *const MmioDevice) };
+/// ```
+///
+/// You must use the `new` method that is generated.
+///
+/// # Example
+///
+/// ```
+/// rumio::define_mmio_register! {
+///     Reg: u16 {
+///         rw MODE: 0..1 = enum Mode [
+///             A = 0b00,
+///             B = 0b01,
+///             C = 0b10,
+///             D = 0b11,
+///         ],
+///
+///         r FOO: 2,
+///
+///         rw BAR: 3,
+///         rw BAZ: 4,
+///
+///         rw FLAGS: 5..8 = flags Flags [
+///             A = 0b0001,
+///             B = 0b0010,
+///             C = 0b0100,
+///             D = 0b1000,
+///         ],
+///     }
+/// }
+///
+/// rumio::define_mmio_struct! {
+///     pub struct Device {
+///         0x00 => one: Reg,
+///         0x08 => two: Reg,
+///     }
+/// }
+/// ```
+///
+///
+/// To explore the whole generated api, take a look at the
+/// [`example_generated`](crate::example_generated) module on docs.rs
 #[macro_export]
 macro_rules! define_mmio_struct {
     ($(#[$attr:meta])*

@@ -1,17 +1,6 @@
 /// Define abstractions for a CPU register.
 ///
-/// The first line must contain the register struct, that either
-/// implements [`RegisterRead`][rr] or [`RegisterWrite`][rw] or both,
-/// and the underlying type for this register.
-/// After the first line, a comma-separated list of field declaration follows.
-///
-/// This macro generates a new module, with the given name, for each field.
-/// To access a fields data, call `FIELD_NAME::get()` where `FIELD_NAME`
-/// comes from the declaration inside the macro. To modify the data,
-/// call `FIELD_NAME::set()`.
-///
-/// he arguments and return values of these methods are determined by the type of this field.
-/// Each field can be one of the following types:
+/// Each field of the register can be one of the following types:
 ///
 /// ## Single Bit
 ///
@@ -135,6 +124,10 @@
 ///     }
 /// }
 /// ```
+///
+///
+/// To explore the whole generated api, take a look at the
+/// [`example_generated`](crate::example_generated) module on docs.rs
 ///
 ///
 /// [rr]: crate::cpu::RegisterRead

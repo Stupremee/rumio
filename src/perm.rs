@@ -44,5 +44,6 @@ impl<P: Permission> Compatible<ReadWrite, P> for ReadWrite {
 
 /// Marker trait that makes two permission types compatible.
 pub trait Compatible<P1, P2>: Sealed {
+    /// The resulting permission when `P1` and `P2` are combined.
     type Output: Permission;
 }

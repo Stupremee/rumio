@@ -94,5 +94,5 @@ fn read_write_flags() {
     assert_eq!(mmio.one().FLAGS().get(), Flags::B | Flags::C);
 
     mmio.two().FLAGS().set(Flags::A | Flags::C);
-    assert_eq!(mmio.two().FLAGS().get(), Flags::A | Flags::C);
+    assert_eq!(mmio.one().FLAGS().get(), Flags::A | Flags::C);
 }
