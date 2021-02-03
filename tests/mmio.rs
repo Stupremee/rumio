@@ -51,6 +51,7 @@ rumio::define_mmio_struct! {
         0x08 => two: Reg,
         0x0A => lit1: Lit<u32>,
         0x0E => lit2: Lit<u8>,
+        0x0F => lit3: [Lit<u8>; 32],
     }
 }
 
@@ -113,4 +114,18 @@ fn read_write_lit() {
 
     assert_eq!(mmio.lit1().read(), 0xF00D_BABE);
     assert_eq!(mmio.lit2().read(), 0xAB);
+}
+
+#[test]
+fn read_write_array() {
+    let (_guard, addr) = MmioRegion::new(48);
+    let mmio = unsafe { Device::new(addr) };
+
+    for idx in 0..32 {
+        mmio.lit3(idx).write(idx as u8);
+    }
+
+    for idx in 0..32 {
+        assert_eq!(mmio.lit3(idx).read(), idx as u8);
+    }
 }

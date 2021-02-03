@@ -27,6 +27,16 @@ impl<T> Lit<T> {
         Self(addr)
     }
 
+    /// Return the size for the inner `T`.
+    pub const fn size() -> usize {
+        core::mem::size_of::<T>()
+    }
+
+    /// Return the underlying `VolAddr`.
+    pub fn addr(self) -> VolAddr<T> {
+        self.0
+    }
+
     /// Perfoms a volatile read of this address, and returns a copy of the inner `T`.
     ///
     /// This method is safe, because all safety guarantees must be provided

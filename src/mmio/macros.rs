@@ -258,6 +258,7 @@ macro_rules! define_mmio_register {
     (@internal, $num_ty:ty, $perm:ident $name:ident: $bit:literal) => {
         impl $name {
             /// A `Field` that covers this single bit.
+            #[allow(unused)]
             pub const FIELD: $crate::Field<$num_ty, $crate::__perm_for_name__!($perm)> = $crate::Field::<$num_ty, _>::new(1 << $bit);
         }
 
@@ -283,9 +284,11 @@ macro_rules! define_mmio_register {
     (@internal_bit, $num_ty:ty, w $name:ident: $bit:literal) => {
         impl $name {
             /// A `Value` that will set this bit to high when modifying a register.
+            #[allow(unused)]
             pub const SET: $crate::Value<$num_ty> = $crate::Value::<$num_ty>::new(1 << $bit, 1 << $bit);
 
             /// A `Value` that will set this bit to low when modifying a register.
+            #[allow(unused)]
             pub const CLEAR: $crate::Value<$num_ty> = $crate::Value::<$num_ty>::new(1 << $bit, 0);
 
             /// Set the value of this bit inside the MMIO.
@@ -357,7 +360,7 @@ macro_rules! define_mmio_struct {
      $pub:vis struct $name:ident {$(
          $(#[$field_attr:meta])*
          $field_offset:expr => $field_name:ident: $field_ty:ty
-    ),*$(,)?}) => {
+    ),*$(,)?}) => { ::defile::item! {
         $(#[$attr])*
         #[derive(Clone, Copy, Debug, PartialEq, Eq)]
         $pub struct $name($crate::mmio::VolAddr<u8>);
@@ -369,19 +372,36 @@ macro_rules! define_mmio_struct {
             ///
             /// The safety arguments of `VolAddr` and
             /// it's `new` method must be guaranteed.
+            #[allow(unused)]
             pub const unsafe fn new(addr: ::core::primitive::usize) -> Self {
                 Self($crate::mmio::VolAddr::<u8>::new(addr))
             }
 
-            $($(#[$field_attr])*
-            #[allow(unused)]
-            pub fn $field_name(&self) -> $field_ty {
-                <$field_ty>::new(unsafe {
-                    $crate::mmio::VolAddr::cast(
-                        $crate::mmio::VolAddr::offset(self.0, $field_offset)
-                    )
-                })
-            })*
+            $( $crate::define_mmio_struct!(@@create_field, $(#[$field_attr])*, $field_name, @$field_ty, $field_offset); )*
+        }
+    }};
+
+    (@create_field, $(#[$attr:meta])*, $name:ident, [$T:ty; $N:expr], $off:expr) => {
+        $(#[$attr])*
+        #[allow(unused)]
+        pub fn $name(&self, idx: usize) -> $T {
+            <$T>::new(unsafe {
+                $crate::mmio::VolAddr::cast(
+                    $crate::mmio::VolAddr::offset(self.0, ($off + <$T>::size() * idx) as isize)
+                )
+            })
+        }
+    };
+
+    (@create_field, $(#[$attr:meta])*, $name:ident, $T:ty, $off:expr) => {
+        $(#[$attr])*
+        #[allow(unused)]
+        pub fn $name(&self) -> $T {
+            <$T>::new(unsafe {
+                $crate::mmio::VolAddr::cast(
+                    $crate::mmio::VolAddr::offset(self.0, $off)
+                )
+            })
         }
     };
 }
