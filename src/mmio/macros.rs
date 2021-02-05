@@ -360,7 +360,7 @@ macro_rules! define_mmio_struct {
      $pub:vis struct $name:ident {$(
          $(#[$field_attr:meta])*
          $field_offset:expr => $field_name:ident: $field_ty:ty
-    ),*$(,)?}) => { ::defile::item! {
+    ),*$(,)?}) => { $crate::defile::item! {
         $(#[$attr])*
         #[derive(Clone, Copy, Debug, PartialEq, Eq)]
         $pub struct $name($crate::mmio::VolAddr<u8>);

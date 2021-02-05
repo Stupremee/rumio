@@ -165,6 +165,14 @@
 #[cfg(feature = "example_generated")]
 pub mod example_generated;
 
+// private re-export for making it available in 
+// the macros.
+
+#[doc(hidden)]
+pub use defile;
+#[doc(hidden)]
+pub use bitflags;
+
 pub mod cpu;
 pub mod mmio;
 pub mod perm;
