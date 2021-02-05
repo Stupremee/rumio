@@ -57,7 +57,7 @@ macro_rules! __generate_field_kinds__ {
             $variant:ident = $variant_val:expr
         ),*]
     ) => {
-        ::bitflags::bitflags! {
+        $crate::bitflags::bitflags! {
             $(#[$attr])*
             pub struct $kind_name: $num_ty {
                 $(const $variant = $variant_val;)*
