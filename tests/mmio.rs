@@ -47,11 +47,12 @@ rumio::define_mmio_register! {
 
 rumio::define_mmio_struct! {
     pub struct Device {
-        0x00 => one: Reg,
-        0x08 => two: Reg,
-        0x0A => lit1: Lit<u32>,
-        0x0E => lit2: Lit<u8>,
-        0x0F => lit3: [Lit<u8>; 32],
+        /// foobar
+        (0x00 => one: Reg),
+        (0x08 => two: Reg),
+        (0x0A => lit1: Lit<u32>),
+        (0x0E => lit2: Lit<u8>),
+        (0x0F => lit3: [Lit<u8>; 32]),
     }
 }
 

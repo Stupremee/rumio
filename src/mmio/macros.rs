@@ -72,6 +72,7 @@ macro_rules! define_mmio_register {
         $(
             $(#[$field_attr])*
             #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+            #[allow(non_camel_case_types)]
             pub struct $name($crate::mmio::VolAddr<$num_ty>);
         )*
 
@@ -345,8 +346,8 @@ macro_rules! define_mmio_register {
 ///
 /// rumio::define_mmio_struct! {
 ///     pub struct Device {
-///         0x00 => one: Reg,
-///         0x08 => two: Reg,
+///         (0x00 => one: Reg),
+///         (0x08 => two: Reg),
 ///     }
 /// }
 /// ```
@@ -359,7 +360,7 @@ macro_rules! define_mmio_struct {
     ($(#[$attr:meta])*
      $pub:vis struct $name:ident {$(
          $(#[$field_attr:meta])*
-         $field_offset:expr => $field_name:ident: $field_ty:ty
+         ($field_offset:expr => $field_name:ident: $field_ty:ty)
     ),*$(,)?}) => { $crate::defile::item! {
         $(#[$attr])*
         #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -395,7 +396,7 @@ macro_rules! define_mmio_struct {
 
     (@create_field, $(#[$attr:meta])*, $name:ident, $T:ty, $off:expr) => {
         $(#[$attr])*
-        #[allow(unused)]
+        #[allow(unused, non_snake_case)]
         pub fn $name(&self) -> $T {
             <$T>::new(unsafe {
                 $crate::mmio::VolAddr::cast(

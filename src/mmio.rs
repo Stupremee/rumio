@@ -13,8 +13,8 @@ use core::{fmt, marker::PhantomData, num::NonZeroUsize};
 /// # use rumio::mmio::Lit;
 /// rumio::define_mmio_struct! {
 ///     pub struct Device {
-///         0x00 => one: Lit<u64>,
-///         0x08 => two: Lit<u8>,
+///         (0x00 => one: Lit<u64>),
+///         (0x08 => two: Lit<u8>),
 ///     }
 /// }
 /// ```

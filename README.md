@@ -123,8 +123,8 @@ rumio::define_mmio_register! {
 
 rumio::define_mmio_struct! {
     pub struct Device {
-        0x00 => one: Reg,
-        0x08 => two: Reg,
+        (0x00 => one: Reg),
+        (0x08 => two: Reg),
     }
 }
 
